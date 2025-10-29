@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerStrategy Pro - Juego Postflop</title>
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --text: #f1f1f1;
+            --card-bg: #2d3047;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--highlight);
+            text-decoration: none;
+        }
+        
+        .logo span {
+            color: var(--text);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 1.5rem;
+        }
+        
+        nav ul li a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+        }
+        
+        nav ul li a:hover, nav ul li a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--highlight);
+        }
+        
+        .hero {
+            background: linear-gradient(rgba(22, 33, 62, 0.9), rgba(15, 52, 96, 0.9)), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%231a1a2e"/><path d="M0 0L100 100M100 0L0 100" stroke="%230f3460" stroke-width="1"/></svg>');
+            padding: 4rem 0;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--highlight), #ff7b9c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: #d1d1d1;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--highlight);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background-color: #ff2e4f;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        
+        .section {
+            padding: 4rem 0;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .section-title h2 {
+            font-size: 2.2rem;
+            display: inline-block;
+            padding-bottom: 0.5rem;
+        }
+        
+        .section-title h2:after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 4px;
+            background-color: var(--highlight);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            background-color: var(--accent);
+            border-bottom: 2px solid var(--highlight);
+        }
+        
+        .card-header h3 {
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .card-body ul {
+            list-style-type: none;
+        }
+        
+        .card-body ul li {
+            margin-bottom: 0.8rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .card-body ul li:before {
+            content: '•';
+            color: var(--highlight);
+            position: absolute;
+            left: 0;
+            font-size: 1.2rem;
+        }
+        
+        .example {
+            background-color: rgba(15, 52, 96, 0.3);
+            border-left: 4px solid var(--highlight);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .hand {
+            display: inline-block;
+            background-color: var(--secondary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            margin: 0 0.2rem;
+            font-weight: 500;
+        }
+        
+        .board {
+            display: inline-block;
+            background-color: var(--accent);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            margin: 0 0.2rem;
+            font-weight: 500;
+        }
+        
+        .chip {
+            display: inline-block;
+            background-color: var(--highlight);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin: 0 0.2rem;
+        }
+        
+        .strategy-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .strategy-table th, .strategy-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .strategy-table th {
+            background-color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .strategy-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .badge-strong {
+            background-color: var(--success);
+        }
+        
+        .badge-sd {
+            background-color: var(--warning);
+            color: #333;
+        }
+        
+        .badge-nothing {
+            background-color: var(--danger);
+        }
+        
+        .flow-section {
+            margin: 3rem 0;
+        }
+        
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .flow-step {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .flow-step:not(:last-child):after {
+            content: '';
+            position: absolute;
+            bottom: -1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 1.5rem;
+            background-color: var(--highlight);
+        }
+        
+        .flow-step h3 {
+            color: var(--highlight);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .flow-step h3 span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background-color: var(--highlight);
+            color: white;
+            border-radius: 50%;
+            margin-right: 0.8rem;
+            font-size: 0.9rem;
+        }
+        
+        footer {
+            background-color: var(--secondary);
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--highlight);
+            margin-bottom: 1rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            margin: 1.5rem 0;
+        }
+        
+        .footer-links a {
+            color: var(--text);
+            margin: 0 1rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--highlight);
+        }
+        
+        .copyright {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+            
+            nav ul {
+                margin-top: 1rem;
+            }
+            
+            nav ul li {
+                margin-left: 0.8rem;
+                margin-right: 0.8rem;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">Poker<span>Strategy</span> Pro</a>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="active">Postflop</a></li>
+                        <li><a href="#">Preflop</a></li>
+                        <li><a href="#">Turn & River</a></li>
+                        <li><a href="#">Calculadoras</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Dominio del Juego Postflop</h1>
+            <p>Aprende estrategias avanzadas para tomar decisiones óptimas después del flop y maximizar tus ganancias en cada mano.</p>
+            <a href="#estrategia" class="btn">Explorar Estrategias</a>
+        </div>
+    </section>
+
+    <section id="estrategia" class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Tipos de Manos Postflop</h2>
+            </div>
+            
+            <div class="cards-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><span class="badge badge-strong">F</span> Manos Fuertes</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Top Par con kicker "J" o mejor. Siempre apostamos con estas manos.</p>
+                        <ul>
+                            <li><span class="hand">A♦ Q♣</span> en <span class="board">A♣ 9♦ 3♠</span> - TP con kicker Q</li>
+                            <li><span class="hand">K♦ K♠</span> en <span class="board">7♥ 6♣ 2♦</span> - Overpair</li>
+                        </ul>
+                        <div class="example">
+                            <strong>Nota:</strong> El board determina si realmente es una mano fuerte. En <span class="board">A♠ 7♣ 4♦</span> con <span class="hand">A♦ Q♣</span>, no es fuerte porque hay posibles colores.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3><span class="badge badge-sd">SD</span> Manos de Showdown</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>TP débiles (kicker T o menor), segundas y terceras parejas. Jugamos Check-Call.</p>
+                        <ul>
+                            <li><span class="hand">K♥ J♥</span> en <span class="board">A♠ J♦ 6♥</span> - Segunda pareja</li>
+                            <li><span class="hand">K♦ K♠</span> en <span class="board">A♣ 8♠ 3♥</span> - Segunda pareja</li>
+                            <li><span class="hand">8♣ 8♥</span> en <span class="board">J♠ 7♣ 4♦</span> - Segunda pareja</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3><span class="badge badge-nothing">N</span> Absolutamente Nada</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Solo carta alta, proyectos o manos de SD muy débiles.</p>
+                        <ul>
+                            <li><span class="hand">A♦ J♥</span> en <span class="board">Q♣ 7♥ 4♠</span> - Carta alta As</li>
+                            <li><span class="hand">K♥ T♥</span> en <span class="board">J♠ 6♥ 2♥</span> - Carta alta + proyecto color</li>
+                            <li><span class="hand">2♠ 2♣</span> en <span class="board">K♠ J♥ 5♦</span> - Pareja baja</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="background-color: var(--secondary);">
+        <div class="container">
+            <div class="section-title">
+                <h2>Apuesta de Continuación (CB)</h2>
+            </div>
+            
+            <div class="flow-container">
+                <div class="flow-step">
+                    <h3><span>1</span> ¿Cuándo hacer CB?</h3>
+                    <p>Hacemos CB cuando tenemos una <strong>mano fuerte</strong> o cuando <strong>no tenemos absolutamente nada</strong> (CB de Bluff).</p>
+                </div>
+                
+                <div class="flow-step">
+                    <h3><span>2</span> CB de Bluff</h3>
+                    <p>Hacemos CB de Bluff cuando el flop es:</p>
+                    <ul>
+                        <li>AXX, KXX, QXX, JXX (carta alta visible)</li>
+                        <li>Monocolor (todas del mismo palo)</li>
+                        <li>Carta doblada (dos cartas iguales)</li>
+                        <li>Tenemos un proyecto de color o escalera</li>
+                    </ul>
+                    <div class="example">
+                        <strong>Ejemplos:</strong><br>
+                        - <span class="hand">K♠ Q♣</span> en <span class="board">J♦ 8♣ 5♥</span> → CB (JXX)<br>
+                        - <span class="hand">A♣ T♣</span> en <span class="board">9♣ 6♥ 2♣</span> → CB (proyecto color)<br>
+                        - <span class="hand">Q♠ J♥</span> en <span class="board">9♦ 9♣ 5♠</span> → CB (carta doblada)
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h3><span>3</span> Tamaños de Apuesta</h3>
+                    <table class="strategy-table">
+                        <thead>
+                            <tr>
+                                <th>Situación</th>
+                                <th>Tamaño</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Se puede completar proyecto en siguiente calle</td>
+                                <td><span class="chip">2/3</span> a <span class="chip">3/4</span> del Pot</td>
+                            </tr>
+                            <tr>
+                                <td>No se puede completar proyecto</td>
+                                <td><span class="chip">1/2</span> a <span class="chip">2/3</span> del Pot</td>
+                            </tr>
+                            <tr>
+                                <td>Vs. recreacional (no foldea)</td>
+                                <td>Mínimo <span class="chip">3/4</span> del Pot</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Respuesta a un Raise a Nuestra CB</h2>
+            </div>
+            
+            <div class="cards-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Manos con las que Pagamos</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Pagamos con manos que pueden mejorar en el Turn para ganar a un Set:</p>
+                        <ul>
+                            <li><strong>Dobles Parejas:</strong> <span class="hand">Q♣ T♣</span> en <span class="board">Q♦ T♠ 8♣</span></li>
+                            <li><strong>Overpairs:</strong> <span class="hand">K♦ K♠</span> en <span class="board">J♣ 6♣ 4♦</span></li>
+                            <li><strong>Proyectos:</strong> <span class="hand">A♥ T♥</span> en <span class="board">J♣ 8♥ 7♥</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Manos con las que Foldeamos</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Foldeamos inmediatamente con:</p>
+                        <ul>
+                            <li>Todo lo inferior a dobles parejas</li>
+                            <li>Top Par, sin importar el kicker</li>
+                        </ul>
+                        <div class="example">
+                            <strong>Ejemplo:</strong><br>
+                            <span class="hand">A♠ K♦</span> en <span class="board">K♠ 9♥ 8♣</span> → Foldeamos ante un raise
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Manos con las que Re-subimos</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Re-subimos y pagamos All-In con:</p>
+                        <ul>
+                            <li>Sets fuertes (dependiendo del board)</li>
+                            <li>Escaleras</li>
+                            <li>Colores</li>
+                            <li>Full Houses</li>
+                        </ul>
+                        <div class="example">
+                            <strong>Ejemplo:</strong><br>
+                            <span class="hand">8♥ 8♠</span> en <span class="board">T♠ 8♣ 3♦</span> → Set fuerte
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="background-color: var(--secondary);">
+        <div class="container">
+            <div class="section-title">
+                <h2>Juego en el Turn y River</h2>
+            </div>
+            
+            <div class="flow-container">
+                <div class="flow-step">
+                    <h3><span>T</span> 2º Barrel en el Turn</h3>
+                    <p>Hacemos segunda apuesta en el Turn con:</p>
+                    <ul>
+                        <li>Nuestras manos fuertes que no empeoran</li>
+                        <li>Algunas manos de CB Bluff que ligan mano fuerte en Turn</li>
+                    </ul>
+                    <div class="example">
+                        <strong>Ejemplo:</strong><br>
+                        <span class="hand">K♠ Q♠</span> en <span class="board">J♦ 8♣ 4♠</span> - <span class="board">K♣</span> → 2º Barrel
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h3><span>R</span> 3º Barrel en el River</h3>
+                    <p>Hacemos tercera apuesta en el River con:</p>
+                    <ul>
+                        <li>Nuestras manos fuertes si no se completa proyecto del rival</li>
+                    </ul>
+                    <div class="example">
+                        <strong>Ejemplo:</strong><br>
+                        <span class="hand">A♦ Q♠</span> en <span class="board">Q♣ T♦ 4♥</span> - <span class="board">6♣</span> - <span class="board">3♦</span> → 3º Barrel
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <h3><span>X</span> Cuándo Resignar</h3>
+                    <p>Jugamos Check-Fold cuando:</p>
+                    <ul>
+                        <li>Hicimos CB Bluff y no ligamos nada en Turn</li>
+                        <li>Nuestra mano se vuelve demasiado débil</li>
+                        <li>Se completan proyectos que nos superan</li>
+                    </ul>
+                    <div class="example">
+                        <strong>Ejemplo:</strong><br>
+                        <span class="hand">K♦ Q♠</span> en <span class="board">J♣ 6♣ 4♥</span> - <span class="board">7♥</span> → Resignamos
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">PokerStrategy Pro</div>
+                <p>Tu guía definitiva para dominar el póker</p>
+                <div class="footer-links">
+                    <a href="#">Inicio</a>
+                    <a href="#">Preflop</a>
+                    <a href="#">Postflop</a>
+                    <a href="#">Turn & River</a>
+                    <a href="#">Contacto</a>
+                </div>
+                <div class="copyright">
+                    &copy; 2023 PokerStrategy Pro. Todos los derechos reservados.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Efecto de scroll suave para los enlaces
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Efecto de aparición para las tarjetas al hacer scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Aplicar a las tarjetas y pasos del flujo
+        document.querySelectorAll('.card, .flow-step').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.5s, transform 0.5s';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
